@@ -1,0 +1,58 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import os
+
+#change filepaths accordingly
+#inputs
+
+satellite_no = input("enter satellite number:")
+date = input("enter date:")
+
+
+#producing one time series graph from one satellite and one month of 24 hour arcs
+
+ref_path = r"C:\Users\Grace Li\OneDrive - University College London\MSc Project\march20_v05_150621\march20_v05_150621\gps01\igs_final"
+
+os.chdir(ref_path)
+
+
+ref_orbitdata = pd.read_fwf('igs_gps'+satellite_no+'_'+date+'.eci', names=["Satellite Number", "Year", "Month", "Day", "Hour", "Minute", "Second", "X_ref", "Y_ref", "Z_ref", "U_ref", "V_ref", "W_ref"])
+ref_orbitdata.drop(ref_orbitdata.columns[[0,6]], inplace=True, axis=1)
+ref_orbit = pd.DataFrame(ref_orbitdata)
+print(ref_orbit)
+
+ucl_path = r"C:\Users\Grace Li\OneDrive - University College London\MSc Project\march20_v05_150621\march20_v05_150621\gps01\ucl_orbits"
+
+os.chdir(ucl_path)
+
+
+ucl_orbitdata = pd.read_fwf('ucl_gps'+satellite_no+'_'+date+'.eci', names=["Satellite Number", "Year", "Month", "Day", "Hour", "Minute", "Second", "X_ucl", "Y_ucl", "Z_ucl", "U_ucl", "V_ucl", "W_ucl"])
+ucl_orbitdata.drop(ucl_orbitdata.columns[[0,6]], inplace=True, axis=1)
+ucl_orbit = pd.DataFrame(ucl_orbitdata)
+print(ucl_orbit)
+
+
+orbit =  pd.merge(ref_orbit, ucl_orbit, on=['Year', 'Month', 'Day', 'Hour','Minute'])
+
+print(orbit)
+
+orbit['dX'] = orbit['X_ref'] - orbit['X_ucl']
+orbit['dY'] = orbit['Y_ref'] - orbit['Y_ucl']
+orbit['dZ'] = orbit['Z_ref'] - orbit['Z_ucl'] 
+
+print(orbit)
+
+orbit['3Derr'] = np.sqrt(orbit['dX']**2+orbit['dY']**2+orbit['dZ']**2)
+
+print(orbit)
+
+
+#Plot
+time = np.arange(0,24,0.25)
+plt.title('3D Error Plot')
+plt.xlabel('Time / hours')
+plt.ylabel('Error / m')
+plt.xlim(0,24)
+plt.plot(time,orbit['3Derr'])
+plt.show()
